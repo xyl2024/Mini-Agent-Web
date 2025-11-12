@@ -56,18 +56,13 @@ MiniMax provides both global and China platforms. Choose based on your network e
 
 ### 2. Choose Your Usage Mode
 
-**Prerequisites: Install pipx**
+**Prerequisites: Install uv**
 
-Both usage modes require pipx. If you don't have it installed:
+Both usage modes require uv. If you don't have it installed:
 
 ```bash
-# macOS
-brew install pipx
-pipx ensurepath
-
-# Linux
-sudo apt install pipx  # Debian/Ubuntu
-pipx ensurepath
+# macOS/Linux/WSL
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # After installation, restart your terminal or run:
 source ~/.bashrc  # or ~/.zshrc
@@ -83,7 +78,7 @@ Perfect for users who want to quickly try Mini Agent without cloning the reposit
 
 ```bash
 # 1. Install directly from GitHub
-pipx install git+https://github.com/MiniMax-AI/Mini-Agent.git
+uv tool install git+https://github.com/MiniMax-AI/Mini-Agent.git
 
 # 2. Run setup script (automatically creates config files)
 curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash
@@ -115,6 +110,11 @@ model: "MiniMax-M2"
 mini-agent                                    # Use current directory as workspace
 mini-agent --workspace /path/to/your/project  # Specify workspace directory
 mini-agent --version                          # Check version
+
+# Management commands
+uv tool upgrade mini-agent                    # Upgrade to latest version
+uv tool uninstall mini-agent                  # Uninstall if needed
+uv tool list                                  # View all installed tools
 ```
 
 #### 🔧 Development Mode
@@ -166,7 +166,7 @@ Choose your preferred run method:
 uv run python -m mini_agent.cli
 
 # Method 2: Install in editable mode (recommended)
-pipx install -e .
+uv tool install -e .
 # After installation, run from anywhere and code changes take effect immediately
 mini-agent
 mini-agent --workspace /path/to/your/project

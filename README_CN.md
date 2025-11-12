@@ -54,24 +54,19 @@ MiniMax 提供国内和海外两个平台，请根据您的网络环境选择：
 
 > 💡 **提示**：请记住您所选平台对应的 API Base 地址，后续配置时会用到。
 
-**前置要求：安装 pipx**
+### 2. 选择使用模式
 
-两种使用模式都需要 pipx。如果您尚未安装：
+**前置要求：安装 uv**
+
+两种使用模式都需要 uv。如果您尚未安装：
 
 ```bash
-# macOS
-brew install pipx
-pipx ensurepath
-
-# Linux
-sudo apt install pipx  # Debian/Ubuntu
-pipx ensurepath
+# macOS/Linux/WSL
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 安装完成后，重启终端或运行：
 source ~/.bashrc  # 或 ~/.zshrc
 ```
-
-### 2. 选择使用模式
 
 我们提供两种使用模式，请根据您的需求选择：
 
@@ -83,13 +78,13 @@ source ~/.bashrc  # 或 ~/.zshrc
 
 ```bash
 # 1. 直接从 GitHub 安装
-pipx install git+https://github.com/MiniMax-AI/Mini-Agent.git
+uv tool install git+https://github.com/MiniMax-AI/Mini-Agent.git
 
 # 2. 运行配置脚本（自动创建配置文件）
 curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash
 ```
 
-> 💡 **提示**：如果您希望在本地进行开发或修改代码，请使用下方的“开发模式”。
+> 💡 **提示**：如果您希望在本地进行开发或修改代码，请使用下方的"开发模式"。
 
 **配置步骤：**
 
@@ -115,6 +110,11 @@ model: "MiniMax-M2"
 mini-agent                                    # 使用当前目录作为工作空间
 mini-agent --workspace /path/to/your/project  # 指定工作空间目录
 mini-agent --version                          # 查看版本信息
+
+# 管理命令
+uv tool upgrade mini-agent                    # 升级到最新版本
+uv tool uninstall mini-agent                  # 卸载工具（如需要）
+uv tool list                                  # 查看所有已安装的工具
 ```
 
 #### 🔧 开发模式
@@ -166,7 +166,7 @@ workspace_dir: "./workspace"
 uv run python -m mini_agent.cli
 
 # 方式 2：以可编辑模式安装（推荐）
-pipx install -e .
+uv tool install -e .
 # 安装后，您可以在任何路径下运行，且代码更改会立即生效
 mini-agent
 mini-agent --workspace /path/to/your/project
