@@ -343,12 +343,9 @@ async def initialize_base_tools(config: Config):
     tools = []
     skill_loader = None
 
-    # 1. Bash tool and Bash Output tool
+    # 1. Bash auxiliary tools (output monitoring and kill)
+    # Note: BashTool itself is created in add_workspace_tools() with workspace_dir as cwd
     if config.tools.enable_bash:
-        bash_tool = BashTool()
-        tools.append(bash_tool)
-        print(f"{Colors.GREEN}✅ Loaded Bash tool{Colors.RESET}")
-
         bash_output_tool = BashOutputTool()
         tools.append(bash_output_tool)
         print(f"{Colors.GREEN}✅ Loaded Bash Output tool{Colors.RESET}")
@@ -438,6 +435,12 @@ def add_workspace_tools(tools: List[Tool], config: Config, workspace_dir: Path):
     """
     # Ensure workspace directory exists
     workspace_dir.mkdir(parents=True, exist_ok=True)
+
+    # Bash tool - needs workspace as cwd for command execution
+    if config.tools.enable_bash:
+        bash_tool = BashTool(workspace_dir=str(workspace_dir))
+        tools.append(bash_tool)
+        print(f"{Colors.GREEN}✅ Loaded Bash tool (cwd: {workspace_dir}){Colors.RESET}")
 
     # File tools - need workspace to resolve relative paths
     if config.tools.enable_file_tools:

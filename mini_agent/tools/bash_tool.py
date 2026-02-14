@@ -216,16 +216,23 @@ class BackgroundShellManager:
 
 class BashTool(Tool):
     """Execute shell commands in foreground or background.
-    
+
     Automatically detects OS and uses appropriate shell:
     - Windows: PowerShell
     - Unix/Linux/macOS: bash
     """
 
-    def __init__(self):
-        """Initialize BashTool with OS-specific shell detection."""
+    def __init__(self, workspace_dir: str | None = None):
+        """Initialize BashTool with OS-specific shell detection.
+
+        Args:
+            workspace_dir: Working directory for command execution.
+                           If provided, all commands run in this directory.
+                           If None, commands run in the process's cwd.
+        """
         self.is_windows = platform.system() == "Windows"
         self.shell_name = "PowerShell" if self.is_windows else "bash"
+        self.workspace_dir = workspace_dir
 
     @property
     def name(self) -> str:
@@ -271,7 +278,7 @@ Tips:
 Examples:
   - git status
   - npm test
-  - python3 -m http.server 8080 (with run_in_background=true)"""
+  - python3 -m http.server 8080 (with run_in_background=true)""",
         }
         return shell_examples["Windows"] if self.is_windows else shell_examples["Unix"]
 
@@ -341,12 +348,14 @@ Examples:
                         *shell_cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,
+                        cwd=self.workspace_dir,
                     )
                 else:
                     process = await asyncio.create_subprocess_shell(
                         shell_cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,
+                        cwd=self.workspace_dir,
                     )
 
                 # Create background shell and add to manager
@@ -376,12 +385,14 @@ Examples:
                         *shell_cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
+                        cwd=self.workspace_dir,
                     )
                 else:
                     process = await asyncio.create_subprocess_shell(
                         shell_cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
+                        cwd=self.workspace_dir,
                     )
 
                 try:
