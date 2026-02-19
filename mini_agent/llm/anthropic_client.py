@@ -1,4 +1,4 @@
-"""Anthropic LLM client implementation."""
+"""Anthropic LLM 客户端实现。"""
 
 import logging
 from typing import Any
@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicClient(LLMClientBase):
-    """LLM client using Anthropic's protocol.
+    """使用 Anthropic 协议的 LLM 客户端。
 
-    This client uses the official Anthropic SDK and supports:
-    - Extended thinking content
-    - Tool calling
-    - Retry logic
+    该客户端使用官方 Anthropic SDK，支持：
+    - 扩展思考内容
+    - 工具调用
+    - 重试逻辑
     """
 
     def __init__(
@@ -28,17 +28,17 @@ class AnthropicClient(LLMClientBase):
         model: str = "MiniMax-M2.5",
         retry_config: RetryConfig | None = None,
     ):
-        """Initialize Anthropic client.
+        """初始化 Anthropic 客户端。
 
         Args:
-            api_key: API key for authentication
-            api_base: Base URL for the API (default: MiniMax Anthropic endpoint)
-            model: Model name to use (default: MiniMax-M2.5)
-            retry_config: Optional retry configuration
+            api_key: 用于认证的 API 密钥
+            api_base: API 的基础 URL（默认值：MiniMax Anthropic 端点）
+            model: 使用的模型名称（默认值：MiniMax-M2.5）
+            retry_config: 可选的重试配置
         """
         super().__init__(api_key, api_base, model, retry_config)
 
-        # Initialize Anthropic async client
+        # 初始化 Anthropic 异步客户端
         self.client = anthropic.AsyncAnthropic(
             base_url=api_base,
             api_key=api_key,
@@ -51,18 +51,18 @@ class AnthropicClient(LLMClientBase):
         api_messages: list[dict[str, Any]],
         tools: list[Any] | None = None,
     ) -> anthropic.types.Message:
-        """Execute API request (core method that can be retried).
+        """执行 API 请求（可重试的核心方法）。
 
         Args:
-            system_message: Optional system message
-            api_messages: List of messages in Anthropic format
-            tools: Optional list of tools
+            system_message: 可选的系统消息
+            api_messages: Anthropic 格式的消息列表
+            tools: 可选的工具列表
 
         Returns:
-            Anthropic Message response
+            Anthropic Message 响应
 
         Raises:
-            Exception: API call failed
+            Exception: API 调用失败
         """
         params = {
             "model": self.model,
@@ -76,14 +76,14 @@ class AnthropicClient(LLMClientBase):
         if tools:
             params["tools"] = self._convert_tools(tools)
 
-        # Use Anthropic SDK's async messages.create
+        # 使用 Anthropic SDK 的异步 messages.create
         response = await self.client.messages.create(**params)
         return response
 
     def _convert_tools(self, tools: list[Any]) -> list[dict[str, Any]]:
-        """Convert tools to Anthropic format.
+        """将工具转换为 Anthropic 格式。
 
-        Anthropic tool format:
+        Anthropic 工具格式：
         {
             "name": "tool_name",
             "description": "Tool description",
@@ -95,30 +95,30 @@ class AnthropicClient(LLMClientBase):
         }
 
         Args:
-            tools: List of Tool objects or dicts
+            tools: Tool 对象或字典列表
 
         Returns:
-            List of tools in Anthropic dict format
+            Anthropic 字典格式的工具列表
         """
         result = []
         for tool in tools:
             if isinstance(tool, dict):
                 result.append(tool)
             elif hasattr(tool, "to_schema"):
-                # Tool object with to_schema method
+                # 具有 to_schema 方法的 Tool 对象
                 result.append(tool.to_schema())
             else:
-                raise TypeError(f"Unsupported tool type: {type(tool)}")
+                raise TypeError(f"不支持的工具类型: {type(tool)}")
         return result
 
     def _convert_messages(self, messages: list[Message]) -> tuple[str | None, list[dict[str, Any]]]:
-        """Convert internal messages to Anthropic format.
+        """将内部消息转换为 Anthropic 格式。
 
         Args:
-            messages: List of internal Message objects
+            messages: 内部 Message 对象列表
 
         Returns:
-            Tuple of (system_message, api_messages)
+            (system_message, api_messages) 元组
         """
         system_message = None
         api_messages = []
@@ -128,22 +128,22 @@ class AnthropicClient(LLMClientBase):
                 system_message = msg.content
                 continue
 
-            # For user and assistant messages
+            # 对于 user 和 assistant 消息
             if msg.role in ["user", "assistant"]:
-                # Handle assistant messages with thinking or tool calls
+                # 处理带有 thinking 或 tool_calls 的 assistant 消息
                 if msg.role == "assistant" and (msg.thinking or msg.tool_calls):
-                    # Build content blocks for assistant with thinking and/or tool calls
+                    # 为带有 thinking 和/或 tool calls 的 assistant 构建内容块
                     content_blocks = []
 
-                    # Add thinking block if present
+                    # 如果有 thinking，添加 thinking 块
                     if msg.thinking:
                         content_blocks.append({"type": "thinking", "thinking": msg.thinking})
 
-                    # Add text content if present
+                    # 如果有 content，添加文本内容
                     if msg.content:
                         content_blocks.append({"type": "text", "text": msg.content})
 
-                    # Add tool use blocks
+                    # 添加 tool use 块
                     if msg.tool_calls:
                         for tool_call in msg.tool_calls:
                             content_blocks.append(
@@ -159,9 +159,9 @@ class AnthropicClient(LLMClientBase):
                 else:
                     api_messages.append({"role": msg.role, "content": msg.content})
 
-            # For tool result messages
+            # 对于 tool 结果消息
             elif msg.role == "tool":
-                # Anthropic uses user role with tool_result content blocks
+                # Anthropic 使用 user 角色和 tool_result 内容块
                 api_messages.append(
                     {
                         "role": "user",
@@ -182,14 +182,14 @@ class AnthropicClient(LLMClientBase):
         messages: list[Message],
         tools: list[Any] | None = None,
     ) -> dict[str, Any]:
-        """Prepare the request for Anthropic API.
+        """准备 Anthropic API 请求。
 
         Args:
-            messages: List of conversation messages
-            tools: Optional list of available tools
+            messages: 对话消息列表
+            tools: 可用的工具列表
 
         Returns:
-            Dictionary containing request parameters
+            包含请求参数的字典
         """
         system_message, api_messages = self._convert_messages(messages)
 
@@ -200,15 +200,15 @@ class AnthropicClient(LLMClientBase):
         }
 
     def _parse_response(self, response: anthropic.types.Message) -> LLMResponse:
-        """Parse Anthropic response into LLMResponse.
+        """将 Anthropic 响应解析为 LLMResponse。
 
         Args:
-            response: Anthropic Message response
+            response: Anthropic Message 响应
 
         Returns:
-            LLMResponse object
+            LLMResponse 对象
         """
-        # Extract text content, thinking, and tool calls
+        # 提取文本内容、thinking 和工具调用
         text_content = ""
         thinking_content = ""
         tool_calls = []
@@ -219,7 +219,7 @@ class AnthropicClient(LLMClientBase):
             elif block.type == "thinking":
                 thinking_content += block.thinking
             elif block.type == "tool_use":
-                # Parse Anthropic tool_use block
+                # 解析 Anthropic tool_use 块
                 tool_calls.append(
                     ToolCall(
                         id=block.id,
@@ -231,8 +231,8 @@ class AnthropicClient(LLMClientBase):
                     )
                 )
 
-        # Extract token usage from response
-        # Anthropic usage includes: input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens
+        # 从响应中提取 token 使用量
+        # Anthropic 使用量包括：input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens
         usage = None
         if hasattr(response, "usage") and response.usage:
             input_tokens = response.usage.input_tokens or 0
@@ -259,21 +259,21 @@ class AnthropicClient(LLMClientBase):
         messages: list[Message],
         tools: list[Any] | None = None,
     ) -> LLMResponse:
-        """Generate response from Anthropic LLM.
+        """从 Anthropic LLM 生成响应。
 
         Args:
-            messages: List of conversation messages
-            tools: Optional list of available tools
+            messages: 对话消息列表
+            tools: 可用的工具列表
 
         Returns:
-            LLMResponse containing the generated content
+            包含生成内容的 LLMResponse
         """
-        # Prepare request
+        # 准备请求
         request_params = self._prepare_request(messages, tools)
 
-        # Make API request with retry logic
+        # 使用重试逻辑发起 API 请求
         if self.retry_config.enabled:
-            # Apply retry logic
+            # 应用重试逻辑
             retry_decorator = async_retry(config=self.retry_config, on_retry=self.retry_callback)
             api_call = retry_decorator(self._make_api_request)
             response = await api_call(
@@ -282,12 +282,12 @@ class AnthropicClient(LLMClientBase):
                 request_params["tools"],
             )
         else:
-            # Don't use retry
+            # 不使用重试
             response = await self._make_api_request(
                 request_params["system_message"],
                 request_params["api_messages"],
                 request_params["tools"],
             )
 
-        # Parse and return response
+        # 解析并返回响应
         return self._parse_response(response)

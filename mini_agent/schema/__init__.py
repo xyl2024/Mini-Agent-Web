@@ -1,4 +1,4 @@
-"""Schema definitions for Mini-Agent."""
+"""Mini-Agent 的模式定义。"""
 
 from .schema import (
     FunctionCall,

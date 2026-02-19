@@ -1,4 +1,4 @@
-"""Base class for LLM clients."""
+"""LLM 客户端基类。"""
 
 from abc import ABC, abstractmethod
 from typing import Any
@@ -8,10 +8,10 @@ from ..schema import LLMResponse, Message
 
 
 class LLMClientBase(ABC):
-    """Abstract base class for LLM clients.
+    """LLM 客户端抽象基类。
 
-    This class defines the interface that all LLM clients must implement,
-    regardless of the underlying API protocol (Anthropic, OpenAI, etc.).
+    该类定义了所有 LLM 客户端必须实现的接口，
+    无论底层 API 协议如何（Anthropic、OpenAI 等）。
     """
 
     def __init__(
@@ -21,20 +21,20 @@ class LLMClientBase(ABC):
         model: str,
         retry_config: RetryConfig | None = None,
     ):
-        """Initialize the LLM client.
+        """初始化 LLM 客户端。
 
         Args:
-            api_key: API key for authentication
-            api_base: Base URL for the API
-            model: Model name to use
-            retry_config: Optional retry configuration
+            api_key: 用于认证的 API 密钥
+            api_base: API 的基础 URL
+            model: 使用的模型名称
+            retry_config: 可选的重试配置
         """
         self.api_key = api_key
         self.api_base = api_base
         self.model = model
         self.retry_config = retry_config or RetryConfig()
 
-        # Callback for tracking retry count
+        # 用于跟踪重试次数的回调
         self.retry_callback = None
 
     @abstractmethod
@@ -43,14 +43,14 @@ class LLMClientBase(ABC):
         messages: list[Message],
         tools: list[Any] | None = None,
     ) -> LLMResponse:
-        """Generate response from LLM.
+        """从 LLM 生成响应。
 
         Args:
-            messages: List of conversation messages
-            tools: Optional list of Tool objects or dicts
+            messages: 对话消息列表
+            tools: 可选的 Tool 对象或字典列表
 
         Returns:
-            LLMResponse containing the generated content, thinking, and tool calls
+            包含生成内容、思考和工具调用的 LLMResponse
         """
         pass
 
@@ -60,25 +60,25 @@ class LLMClientBase(ABC):
         messages: list[Message],
         tools: list[Any] | None = None,
     ) -> dict[str, Any]:
-        """Prepare the request payload for the API.
+        """准备 API 请求负载。
 
         Args:
-            messages: List of conversation messages
-            tools: Optional list of available tools
+            messages: 对话消息列表
+            tools: 可用的工具列表
 
         Returns:
-            Dictionary containing the request payload
+            包含请求负载的字典
         """
         pass
 
     @abstractmethod
     def _convert_messages(self, messages: list[Message]) -> tuple[str | None, list[dict[str, Any]]]:
-        """Convert internal message format to API-specific format.
+        """将内部消息格式转换为 API 特定格式。
 
         Args:
-            messages: List of internal Message objects
+            messages: 内部 Message 对象列表
 
         Returns:
-            Tuple of (system_message, api_messages)
+            (system_message, api_messages) 元组
         """
         pass
