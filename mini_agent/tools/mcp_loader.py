@@ -1,4 +1,4 @@
-"""MCP tool loader with real MCP client integration and timeout handling."""
+"""MCP 工具加载器，集成真实 MCP 客户端并支持超时处理。"""
 
 import asyncio
 import json
@@ -20,14 +20,14 @@ ConnectionType = Literal["stdio", "sse", "http", "streamable_http"]
 
 @dataclass
 class MCPTimeoutConfig:
-    """MCP timeout configuration."""
+    """MCP 超时配置。"""
 
-    connect_timeout: float = 10.0  # Connection timeout (seconds)
-    execute_timeout: float = 60.0  # Tool execution timeout (seconds)
-    sse_read_timeout: float = 120.0  # SSE read timeout (seconds)
+    connect_timeout: float = 10.0  # 连接超时（秒）
+    execute_timeout: float = 60.0  # 工具执行超时（秒）
+    sse_read_timeout: float = 120.0  # SSE 读取超时（秒）
 
 
-# Global default timeout config
+# 全局默认超时配置
 _default_timeout_config = MCPTimeoutConfig()
 
 
@@ -36,12 +36,12 @@ def set_mcp_timeout_config(
     execute_timeout: float | None = None,
     sse_read_timeout: float | None = None,
 ) -> None:
-    """Set global MCP timeout configuration.
+    """设置全局 MCP 超时配置。
 
     Args:
-        connect_timeout: Connection timeout in seconds
-        execute_timeout: Tool execution timeout in seconds
-        sse_read_timeout: SSE read timeout in seconds
+        connect_timeout: 连接超时（秒）
+        execute_timeout: 工具执行超时（秒）
+        sse_read_timeout: SSE 读取超时（秒）
     """
     global _default_timeout_config
     if connect_timeout is not None:
@@ -53,12 +53,12 @@ def set_mcp_timeout_config(
 
 
 def get_mcp_timeout_config() -> MCPTimeoutConfig:
-    """Get current MCP timeout configuration."""
+    """获取当前 MCP 超时配置。"""
     return _default_timeout_config
 
 
 class MCPTool(Tool):
-    """Wrapper for MCP tools with timeout handling."""
+    """带有超时处理的 MCP 工具包装器。"""
 
     def __init__(
         self,
@@ -87,15 +87,15 @@ class MCPTool(Tool):
         return self._parameters
 
     async def execute(self, **kwargs) -> ToolResult:
-        """Execute MCP tool via the session with timeout protection."""
+        """通过会话执行 MCP 工具，带超时保护。"""
         timeout = self._execute_timeout or _default_timeout_config.execute_timeout
 
         try:
-            # Wrap call_tool with timeout
+            # 用超时包装 call_tool
             async with asyncio.timeout(timeout):
                 result = await self._session.call_tool(self._name, arguments=kwargs)
 
-            # MCP tool results are a list of content items
+            # MCP 工具结果是一个内容项列表
             content_parts = []
             for item in result.content:
                 if hasattr(item, "text"):
@@ -107,33 +107,33 @@ class MCPTool(Tool):
 
             is_error = result.isError if hasattr(result, "isError") else False
 
-            return ToolResult(success=not is_error, content=content_str, error=None if not is_error else "Tool returned error")
+            return ToolResult(success=not is_error, content=content_str, error=None if not is_error else "工具返回错误")
 
         except TimeoutError:
             return ToolResult(
                 success=False,
                 content="",
-                error=f"MCP tool execution timed out after {timeout}s. The remote server may be slow or unresponsive.",
+                error=f"MCP 工具执行在 {timeout}s 后超时。远程服务器可能较慢或无响应。",
             )
         except Exception as e:
-            return ToolResult(success=False, content="", error=f"MCP tool execution failed: {str(e)}")
+            return ToolResult(success=False, content="", error=f"MCP 工具执行失败: {str(e)}")
 
 
 class MCPServerConnection:
-    """Manages connection to a single MCP server (STDIO or URL-based) with timeout handling."""
+    """管理到单个 MCP 服务器（STDIO 或基于 URL）的连接，带超时处理。"""
 
     def __init__(
         self,
         name: str,
         connection_type: ConnectionType = "stdio",
-        # STDIO params
+        # STDIO 参数
         command: str | None = None,
         args: list[str] | None = None,
         env: dict[str, str] | None = None,
-        # URL-based params
+        # 基于 URL 的参数
         url: str | None = None,
         headers: dict[str, str] | None = None,
-        # Timeout overrides (per-server)
+        # 超时覆盖（每个服务器）
         connect_timeout: float | None = None,
         execute_timeout: float | None = None,
         sse_read_timeout: float | None = None,
@@ -144,38 +144,38 @@ class MCPServerConnection:
         self.command = command
         self.args = args or []
         self.env = env or {}
-        # URL-based
+        # 基于 URL
         self.url = url
         self.headers = headers or {}
-        # Timeout settings (per-server overrides)
+        # 超时设置（每个服务器覆盖）
         self.connect_timeout = connect_timeout
         self.execute_timeout = execute_timeout
         self.sse_read_timeout = sse_read_timeout
-        # Connection state
+        # 连接状态
         self.session: ClientSession | None = None
         self.exit_stack: AsyncExitStack | None = None
         self.tools: list[MCPTool] = []
 
     def _get_connect_timeout(self) -> float:
-        """Get effective connect timeout."""
+        """获取有效的连接超时。"""
         return self.connect_timeout or _default_timeout_config.connect_timeout
 
     def _get_sse_read_timeout(self) -> float:
-        """Get effective SSE read timeout."""
+        """获取有效的 SSE 读取超时。"""
         return self.sse_read_timeout or _default_timeout_config.sse_read_timeout
 
     def _get_execute_timeout(self) -> float:
-        """Get effective execute timeout."""
+        """获取有效的执行超时。"""
         return self.execute_timeout or _default_timeout_config.execute_timeout
 
     async def connect(self) -> bool:
-        """Connect to the MCP server with timeout protection."""
+        """连接到 MCP 服务器，带超时保护。"""
         connect_timeout = self._get_connect_timeout()
 
         try:
             self.exit_stack = AsyncExitStack()
 
-            # Wrap connection with timeout
+            # 用超时包装连接
             async with asyncio.timeout(connect_timeout):
                 if self.connection_type == "stdio":
                     read_stream, write_stream = await self._connect_stdio()
@@ -184,17 +184,17 @@ class MCPServerConnection:
                 else:  # http / streamable_http
                     read_stream, write_stream = await self._connect_streamable_http()
 
-                # Enter client session context
+                # 进入客户端会话上下文
                 session = await self.exit_stack.enter_async_context(ClientSession(read_stream, write_stream))
                 self.session = session
 
-                # Initialize the session
+                # 初始化会话
                 await session.initialize()
 
-                # List available tools
+                # 列出可用工具
                 tools_list = await session.list_tools()
 
-            # Wrap each tool with execute timeout
+            # 为每个工具包装执行超时
             execute_timeout = self._get_execute_timeout()
             for tool in tools_list.tools:
                 parameters = tool.inputSchema if hasattr(tool, "inputSchema") else {}
@@ -208,21 +208,21 @@ class MCPServerConnection:
                 self.tools.append(mcp_tool)
 
             conn_info = self.url if self.url else self.command
-            print(f"✓ Connected to MCP server '{self.name}' ({self.connection_type}: {conn_info}) - loaded {len(self.tools)} tools")
+            print(f"✓ 已连接到 MCP 服务器 '{self.name}' ({self.connection_type}: {conn_info}) - 已加载 {len(self.tools)} 个工具")
             for tool in self.tools:
                 desc = tool.description[:60] if len(tool.description) > 60 else tool.description
                 print(f"  - {tool.name}: {desc}...")
             return True
 
         except TimeoutError:
-            print(f"✗ Connection to MCP server '{self.name}' timed out after {connect_timeout}s")
+            print(f"✗ 连接到 MCP 服务器 '{self.name}' 在 {connect_timeout}s 后超时")
             if self.exit_stack:
                 await self.exit_stack.aclose()
                 self.exit_stack = None
             return False
 
         except Exception as e:
-            print(f"✗ Failed to connect to MCP server '{self.name}': {e}")
+            print(f"✗ 连接到 MCP 服务器 '{self.name}' 失败: {e}")
             if self.exit_stack:
                 await self.exit_stack.aclose()
                 self.exit_stack = None
@@ -232,12 +232,12 @@ class MCPServerConnection:
             return False
 
     async def _connect_stdio(self):
-        """Connect via STDIO transport."""
+        """通过 STDIO 传输连接。"""
         server_params = StdioServerParameters(command=self.command, args=self.args, env=self.env if self.env else None)
         return await self.exit_stack.enter_async_context(stdio_client(server_params))
 
     async def _connect_sse(self):
-        """Connect via SSE transport with timeout parameters."""
+        """通过 SSE 传输连接，带超时参数。"""
         connect_timeout = self._get_connect_timeout()
         sse_read_timeout = self._get_sse_read_timeout()
 
@@ -251,11 +251,11 @@ class MCPServerConnection:
         )
 
     async def _connect_streamable_http(self):
-        """Connect via Streamable HTTP transport with timeout parameters."""
+        """通过 Streamable HTTP 传输连接，带超时参数。"""
         connect_timeout = self._get_connect_timeout()
         sse_read_timeout = self._get_sse_read_timeout()
 
-        # streamablehttp_client returns (read, write, get_session_id)
+        # streamablehttp_client 返回 (read, write, get_session_id)
         read_stream, write_stream, _ = await self.exit_stack.enter_async_context(
             streamablehttp_client(
                 url=self.url,
@@ -267,30 +267,29 @@ class MCPServerConnection:
         return read_stream, write_stream
 
     async def disconnect(self):
-        """Properly disconnect from the MCP server."""
+        """正确断开与 MCP 服务器的连接。"""
         if self.exit_stack:
             try:
                 await self.exit_stack.aclose()
             except Exception:
-                # anyio cancel scope may raise RuntimeError or ExceptionGroup
-                # when stdio_client's task group is closed from a different
-                # task context during shutdown.
+                # anyio 取消作用域可能会在关闭期间从不同的任务上下文
+                # 关闭 stdio_client 的任务组时引发 RuntimeError 或 ExceptionGroup
                 pass
             finally:
                 self.exit_stack = None
                 self.session = None
 
 
-# Global connections registry
+# 全局连接注册表
 _mcp_connections: list[MCPServerConnection] = []
 
 
 def _determine_connection_type(server_config: dict) -> ConnectionType:
-    """Determine connection type from server config."""
+    """从服务器配置确定连接类型。"""
     explicit_type = server_config.get("type", "").lower()
     if explicit_type in ("stdio", "sse", "http", "streamable_http"):
         return explicit_type
-    # Auto-detect: if url exists, default to streamable_http; otherwise stdio
+    # 自动检测：如果存在 url，则默认使用 streamable_http；否则使用 stdio
     if server_config.get("url"):
         return "streamable_http"
     return "stdio"
@@ -298,30 +297,30 @@ def _determine_connection_type(server_config: dict) -> ConnectionType:
 
 def _resolve_mcp_config_path(config_path: str) -> Path | None:
     """
-    Resolve MCP config path with fallback logic.
+    解析 MCP 配置路径，带回退逻辑。
 
-    Priority:
-    1. If the specified path exists, use it
-    2. If mcp.json doesn't exist, try mcp-example.json in the same directory
-    3. Return None if no config found
+    优先级：
+    1. 如果指定路径存在，直接使用
+    2. 如果 mcp.json 不存在，尝试同一目录中的 mcp-example.json
+    3. 如果未找到配置则返回 None
 
     Args:
-        config_path: User-specified config path
+        config_path: 用户指定的配置路径
 
     Returns:
-        Resolved Path object or None if not found
+        解析后的 Path 对象，如果未找到则返回 None
     """
     config_file = Path(config_path)
 
-    # If specified path exists, use it directly
+    # 如果指定路径存在，直接使用
     if config_file.exists():
         return config_file
 
-    # Fallback: if looking for mcp.json, try mcp-example.json
+    # 回退：如果查找 mcp.json，尝试 mcp-example.json
     if config_file.name == "mcp.json":
         example_file = config_file.parent / "mcp-example.json"
         if example_file.exists():
-            print(f"mcp.json not found, using template: {example_file}")
+            print(f"mcp.json 未找到，使用模板: {example_file}")
             return example_file
 
     return None
@@ -329,39 +328,39 @@ def _resolve_mcp_config_path(config_path: str) -> Path | None:
 
 async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
     """
-    Load MCP tools from config file.
+    从配置文件加载 MCP 工具。
 
-    This function:
-    1. Reads the MCP config file (with fallback to mcp-example.json)
-    2. Connects to each server (STDIO or URL-based)
-    3. Fetches tool definitions
-    4. Wraps them as Tool objects
+    此函数：
+    1. 读取 MCP 配置文件（回退到 mcp-example.json）
+    2. 连接到每个服务器（STDIO 或基于 URL）
+    3. 获取工具定义
+    4. 将它们包装为 Tool 对象
 
-    Supported config formats:
+    支持的配置格式：
     - STDIO: {"command": "...", "args": [...], "env": {...}}
-    - URL-based: {"url": "https://...", "type": "sse|http|streamable_http", "headers": {...}}
+    - 基于 URL: {"url": "https://...", "type": "sse|http|streamable_http", "headers": {...}}
 
-    Per-server timeout overrides (optional):
-    - "connect_timeout": float - Connection timeout in seconds
-    - "execute_timeout": float - Tool execution timeout in seconds
-    - "sse_read_timeout": float - SSE read timeout in seconds
+    每个服务器的超时覆盖（可选）：
+    - "connect_timeout": float - 连接超时（秒）
+    - "execute_timeout": float - 工具执行超时（秒）
+    - "sse_read_timeout": float - SSE 读取超时（秒）
 
-    Note:
-    - If mcp.json is not found, will automatically fallback to mcp-example.json
-    - User-specific mcp.json should be created by copying mcp-example.json
+    注意：
+    - 如果未找到 mcp.json，将自动回退到 mcp-example.json
+    - 用户特定的 mcp.json 应通过复制 mcp-example.json 创建
 
     Args:
-        config_path: Path to MCP configuration file (default: "mcp.json")
+        config_path: MCP 配置文件路径（默认："mcp.json"）
 
     Returns:
-        List of Tool objects representing MCP tools
+        表示 MCP 工具的 Tool 对象列表
     """
     global _mcp_connections
 
     config_file = _resolve_mcp_config_path(config_path)
 
     if config_file is None:
-        print(f"MCP config not found: {config_path}")
+        print(f"未找到 MCP 配置: {config_path}")
         return []
 
     try:
@@ -371,27 +370,27 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
         mcp_servers = config.get("mcpServers", {})
 
         if not mcp_servers:
-            print("No MCP servers configured")
+            print("未配置 MCP 服务器")
             return []
 
         all_tools = []
 
-        # Connect to each enabled server
+        # 连接到每个已启用的服务器
         for server_name, server_config in mcp_servers.items():
             if server_config.get("disabled", False):
-                print(f"Skipping disabled server: {server_name}")
+                print(f"跳过禁用的服务器: {server_name}")
                 continue
 
             conn_type = _determine_connection_type(server_config)
             url = server_config.get("url")
             command = server_config.get("command")
 
-            # Validate config
+            # 验证配置
             if conn_type == "stdio" and not command:
-                print(f"No command specified for STDIO server: {server_name}")
+                print(f"STDIO 服务器未指定命令: {server_name}")
                 continue
             if conn_type in ("sse", "http", "streamable_http") and not url:
-                print(f"No url specified for {conn_type.upper()} server: {server_name}")
+                print(f"{conn_type.upper()} 服务器未指定 url: {server_name}")
                 continue
 
             connection = MCPServerConnection(
@@ -402,7 +401,7 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
                 env=server_config.get("env", {}),
                 url=url,
                 headers=server_config.get("headers", {}),
-                # Per-server timeout overrides from mcp.json
+                # 来自 mcp.json 的每个服务器超时覆盖
                 connect_timeout=server_config.get("connect_timeout"),
                 execute_timeout=server_config.get("execute_timeout"),
                 sse_read_timeout=server_config.get("sse_read_timeout"),
@@ -413,12 +412,12 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
                 _mcp_connections.append(connection)
                 all_tools.extend(connection.tools)
 
-        print(f"\nTotal MCP tools loaded: {len(all_tools)}")
+        print(f"\n已加载的 MCP 工具总数: {len(all_tools)}")
 
         return all_tools
 
     except Exception as e:
-        print(f"Error loading MCP config: {e}")
+        print(f"加载 MCP 配置时出错: {e}")
         import traceback
 
         traceback.print_exc()
@@ -426,7 +425,7 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
 
 
 async def cleanup_mcp_connections():
-    """Clean up all MCP connections."""
+    """清理所有 MCP 连接。"""
     global _mcp_connections
     for connection in _mcp_connections:
         await connection.disconnect()

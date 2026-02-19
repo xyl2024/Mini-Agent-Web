@@ -1,4 +1,4 @@
-"""Base tool classes."""
+"""基础工具类。"""
 
 from typing import Any
 
@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class ToolResult(BaseModel):
-    """Tool execution result."""
+    """工具执行结果。"""
 
     success: bool
     content: str = ""
@@ -14,29 +14,29 @@ class ToolResult(BaseModel):
 
 
 class Tool:
-    """Base class for all tools."""
+    """所有工具的基类。"""
 
     @property
     def name(self) -> str:
-        """Tool name."""
+        """工具名称。"""
         raise NotImplementedError
 
     @property
     def description(self) -> str:
-        """Tool description."""
+        """工具描述。"""
         raise NotImplementedError
 
     @property
     def parameters(self) -> dict[str, Any]:
-        """Tool parameters schema (JSON Schema format)."""
+        """工具参数 schema（JSON Schema 格式）。"""
         raise NotImplementedError
 
     async def execute(self, *args, **kwargs) -> ToolResult:  # type: ignore
-        """Execute the tool with arbitrary arguments."""
+        """使用任意参数执行工具。"""
         raise NotImplementedError
 
     def to_schema(self) -> dict[str, Any]:
-        """Convert tool to Anthropic tool schema."""
+        """将工具转换为 Anthropic 工具 schema。"""
         return {
             "name": self.name,
             "description": self.description,
@@ -44,7 +44,7 @@ class Tool:
         }
 
     def to_openai_schema(self) -> dict[str, Any]:
-        """Convert tool to OpenAI tool schema."""
+        """将工具转换为 OpenAI 工具 schema。"""
         return {
             "type": "function",
             "function": {

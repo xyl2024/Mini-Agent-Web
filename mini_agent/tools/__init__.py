@@ -1,4 +1,4 @@
-"""Tools module."""
+"""工具模块。"""
 
 from .base import Tool, ToolResult
 from .bash_tool import BashTool

@@ -1,7 +1,7 @@
 """
-Skill Tool - Tool for Agent to load Skills on-demand
+技能工具 - Agent 按需加载技能的工具
 
-Implements Progressive Disclosure (Level 2): Load full skill content when needed
+实现渐进式披露（Level 2）：在需要时加载完整的技能内容
 """
 
 from typing import Any, Dict, List, Optional
@@ -11,7 +11,7 @@ from .skill_loader import SkillLoader
 
 
 class GetSkillTool(Tool):
-    """Tool to get detailed information about a specific skill"""
+    """获取特定技能详细信息的工具"""
 
     def __init__(self, skill_loader: SkillLoader):
         self.skill_loader = skill_loader
@@ -22,7 +22,7 @@ class GetSkillTool(Tool):
 
     @property
     def description(self) -> str:
-        return "Get complete content and guidance for a specified skill, used for executing specific types of tasks"
+        return "获取指定技能的完整内容和指导，用于执行特定类型的任务"
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -31,14 +31,14 @@ class GetSkillTool(Tool):
             "properties": {
                 "skill_name": {
                     "type": "string",
-                    "description": "Name of the skill to retrieve (use list_skills to view available skills)",
+                    "description": "要检索的技能名称（使用 list_skills 查看可用技能）",
                 }
             },
             "required": ["skill_name"],
         }
 
     async def execute(self, skill_name: str) -> ToolResult:
-        """Get detailed information about specified skill"""
+        """获取指定技能的详细信息"""
         skill = self.skill_loader.get_skill(skill_name)
 
         if not skill:
@@ -46,10 +46,10 @@ class GetSkillTool(Tool):
             return ToolResult(
                 success=False,
                 content="",
-                error=f"Skill '{skill_name}' does not exist. Available skills: {available}",
+                error=f"技能 '{skill_name}' 不存在。可用技能: {available}",
             )
 
-        # Return complete skill content
+        # 返回完整的技能内容
         result = skill.to_prompt()
         return ToolResult(success=True, content=result)
 
@@ -58,25 +58,25 @@ def create_skill_tools(
     skills_dir: str = "./skills",
 ) -> tuple[List[Tool], Optional[SkillLoader]]:
     """
-    Create skill tool for Progressive Disclosure
+    为渐进式披露创建技能工具
 
-    Only provides get_skill tool - the agent uses metadata in system prompt
-    to know what skills are available, then loads them on-demand.
+    仅提供 get_skill 工具 - Agent 使用系统 prompt 中的元数据
+    了解有哪些技能可用，然后按需加载它们。
 
     Args:
-        skills_dir: Skills directory path
+        skills_dir: 技能目录路径
 
     Returns:
-        Tuple of (list of tools, skill loader)
+        （工具列表，技能加载器）的元组
     """
-    # Create skill loader
+    # 创建技能加载器
     loader = SkillLoader(skills_dir)
 
-    # Discover and load skills
+    # 发现并加载技能
     skills = loader.discover_skills()
-    print(f"✅ Discovered {len(skills)} Claude Skills")
+    print(f"✅ 已发现 {len(skills)} 个 Claude Skills")
 
-    # Create only the get_skill tool (Progressive Disclosure Level 2)
+    # 仅创建 get_skill 工具（渐进式披露 Level 2）
     tools = [
         GetSkillTool(loader),
     ]
