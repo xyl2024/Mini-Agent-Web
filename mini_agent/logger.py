@@ -1,4 +1,4 @@
-"""Agent run logger"""
+"""Agent 运行日志记录器"""
 
 import json
 from datetime import datetime
@@ -9,53 +9,53 @@ from .schema import Message, ToolCall
 
 
 class AgentLogger:
-    """Agent run logger
+    """Agent 运行日志记录器
 
-    Responsible for recording the complete interaction process of each agent run, including:
-    - LLM requests and responses
-    - Tool calls and results
+    负责记录每次 Agent 运行的完整交互过程，包括：
+    - LLM 请求和响应
+    - 工具调用和结果
     """
 
     def __init__(self):
-        """Initialize logger
+        """初始化日志记录器
 
-        Logs are stored in ~/.mini-agent/log/ directory
+        日志存储在 ~/.mini-agent/log/ 目录
         """
-        # Use ~/.mini-agent/log/ directory for logs
+        # 使用 ~/.mini-agent/log/ 目录存储日志
         self.log_dir = Path.home() / ".mini-agent" / "log"
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = None
         self.log_index = 0
 
     def start_new_run(self):
-        """Start new run, create new log file"""
+        """开始新运行，创建新日志文件"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         log_filename = f"agent_run_{timestamp}.log"
         self.log_file = self.log_dir / log_filename
         self.log_index = 0
 
-        # Write log header
+        # 写入日志头部
         with open(self.log_file, "w", encoding="utf-8") as f:
             f.write("=" * 80 + "\n")
-            f.write(f"Agent Run Log - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Agent 运行日志 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("=" * 80 + "\n\n")
 
     def log_request(self, messages: list[Message], tools: list[Any] | None = None):
-        """Log LLM request
+        """记录 LLM 请求
 
         Args:
-            messages: Message list
-            tools: Tool list (optional)
+            messages: 消息列表
+            tools: 工具列表（可选）
         """
         self.log_index += 1
 
-        # Build complete request data structure
+        # 构建完整的请求数据结构
         request_data = {
             "messages": [],
             "tools": [],
         }
 
-        # Convert messages to JSON serializable format
+        # 将消息转换为 JSON 可序列化格式
         for msg in messages:
             msg_dict = {
                 "role": msg.role,
@@ -72,12 +72,12 @@ class AgentLogger:
 
             request_data["messages"].append(msg_dict)
 
-        # Only record tool names
+        # 只记录工具名称
         if tools:
             request_data["tools"] = [tool.name for tool in tools]
 
-        # Format as JSON
-        content = "LLM Request:\n\n"
+        # 格式化为 JSON
+        content = "LLM 请求:\n\n"
         content += json.dumps(request_data, indent=2, ensure_ascii=False)
 
         self._write_log("REQUEST", content)
@@ -89,17 +89,17 @@ class AgentLogger:
         tool_calls: list[ToolCall] | None = None,
         finish_reason: str | None = None,
     ):
-        """Log LLM response
+        """记录 LLM 响应
 
         Args:
-            content: Response content
-            thinking: Thinking content (optional)
-            tool_calls: Tool call list (optional)
-            finish_reason: Finish reason (optional)
+            content: 响应内容
+            thinking: 思考内容（可选）
+            tool_calls: 工具调用列表（可选）
+            finish_reason: 结束原因（可选）
         """
         self.log_index += 1
 
-        # Build complete response data structure
+        # 构建完整的响应数据结构
         response_data = {
             "content": content,
         }
@@ -113,8 +113,8 @@ class AgentLogger:
         if finish_reason:
             response_data["finish_reason"] = finish_reason
 
-        # Format as JSON
-        log_content = "LLM Response:\n\n"
+        # 格式化为 JSON
+        log_content = "LLM 响应:\n\n"
         log_content += json.dumps(response_data, indent=2, ensure_ascii=False)
 
         self._write_log("RESPONSE", log_content)
@@ -127,18 +127,18 @@ class AgentLogger:
         result_content: str | None = None,
         result_error: str | None = None,
     ):
-        """Log tool execution result
+        """记录工具执行结果
 
         Args:
-            tool_name: Tool name
-            arguments: Tool arguments
-            result_success: Whether successful
-            result_content: Result content (on success)
-            result_error: Error message (on failure)
+            tool_name: 工具名称
+            arguments: 工具参数
+            result_success: 是否成功
+            result_content: 结果内容（成功时）
+            result_error: 错误消息（失败时）
         """
         self.log_index += 1
 
-        # Build complete tool execution result data structure
+        # 构建完整的工具执行结果数据结构
         tool_result_data = {
             "tool_name": tool_name,
             "arguments": arguments,
@@ -150,18 +150,18 @@ class AgentLogger:
         else:
             tool_result_data["error"] = result_error
 
-        # Format as JSON
-        content = "Tool Execution:\n\n"
+        # 格式化为 JSON
+        content = "工具执行:\n\n"
         content += json.dumps(tool_result_data, indent=2, ensure_ascii=False)
 
         self._write_log("TOOL_RESULT", content)
 
     def _write_log(self, log_type: str, content: str):
-        """Write log entry
+        """写入日志条目
 
         Args:
-            log_type: Log type (REQUEST, RESPONSE, TOOL_RESULT)
-            content: Log content
+            log_type: 日志类型（REQUEST, RESPONSE, TOOL_RESULT）
+            content: 日志内容
         """
         if self.log_file is None:
             return
@@ -169,10 +169,10 @@ class AgentLogger:
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write("\n" + "-" * 80 + "\n")
             f.write(f"[{self.log_index}] {log_type}\n")
-            f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}\n")
+            f.write(f"时间戳: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}\n")
             f.write("-" * 80 + "\n")
             f.write(content + "\n")
 
     def get_log_file_path(self) -> Path:
-        """Get current log file path"""
+        """获取当前日志文件路径"""
         return self.log_file

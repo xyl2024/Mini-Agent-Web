@@ -1,4 +1,4 @@
-"""Mini Agent - Minimal single agent with basic tools and MCP support."""
+"""Mini Agent - 支持基本工具和 MCP 的轻量级单 Agent。"""
 
 from .agent import Agent
 from .llm import LLMClient

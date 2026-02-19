@@ -1,13 +1,13 @@
-"""Elegant retry mechanism module
+"""优雅的重试机制模块
 
-Provides decorators and utility functions to support retry logic for async functions.
+提供装饰器和工具函数以支持异步函数的重试逻辑。
 
-Features:
-- Supports exponential backoff strategy
-- Configurable retry count and intervals
-- Supports specifying retryable exception types
-- Detailed logging
-- Fully decoupled, non-invasive to business code
+功能特性：
+- 支持指数退避策略
+- 可配置的重试次数和间隔
+- 支持指定可重试的异常类型
+- 详细日志记录
+- 完全解耦，不侵入业务代码
 """
 
 import asyncio
@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 
 class RetryConfig:
-    """Retry configuration class"""
+    """重试配置类"""
 
     def __init__(
         self,
@@ -34,12 +34,12 @@ class RetryConfig:
     ):
         """
         Args:
-            enabled: Whether to enable retry mechanism
-            max_retries: Maximum number of retries
-            initial_delay: Initial delay time (seconds)
-            max_delay: Maximum delay time (seconds)
-            exponential_base: Exponential backoff base
-            retryable_exceptions: Tuple of retryable exception types
+            enabled: 是否启用重试机制
+            max_retries: 最大重试次数
+            initial_delay: 初始延迟时间（秒）
+            max_delay: 最大延迟时间（秒）
+            exponential_base: 指数退避基数
+            retryable_exceptions: 可重试的异常类型元组
         """
         self.enabled = enabled
         self.max_retries = max_retries
@@ -49,45 +49,45 @@ class RetryConfig:
         self.retryable_exceptions = retryable_exceptions
 
     def calculate_delay(self, attempt: int) -> float:
-        """Calculate delay time (exponential backoff)
+        """计算延迟时间（指数退避）
 
         Args:
-            attempt: Current attempt number (starting from 0)
+            attempt: 当前尝试次数（从 0 开始）
 
         Returns:
-            Delay time (seconds)
+            延迟时间（秒）
         """
         delay = self.initial_delay * (self.exponential_base**attempt)
         return min(delay, self.max_delay)
 
 
 class RetryExhaustedError(Exception):
-    """Retry exhausted exception"""
+    """重试耗尽异常"""
 
     def __init__(self, last_exception: Exception, attempts: int):
         self.last_exception = last_exception
         self.attempts = attempts
-        super().__init__(f"Retry failed after {attempts} attempts. Last error: {str(last_exception)}")
+        super().__init__(f"重试在 {attempts} 次尝试后失败。最后错误: {str(last_exception)}")
 
 
 def async_retry(
     config: RetryConfig | None = None,
     on_retry: Callable[[Exception, int], None] | None = None,
 ) -> Callable:
-    """Async function retry decorator
+    """异步函数重试装饰器
 
     Args:
-        config: Retry configuration object, uses default config if None
-        on_retry: Callback function on retry, receives exception and current attempt number
+        config: 重试配置对象，如果为 None 则使用默认配置
+        on_retry: 重试时的回调函数，接收异常和当前尝试次数
 
     Returns:
-        Decorator function
+        装饰器函数
 
-    Example:
+    示例:
         ```python
         @async_retry(RetryConfig(max_retries=3, initial_delay=1.0))
         async def call_api():
-            # API call code
+            # API 调用代码
             pass
         ```
     """
@@ -101,37 +101,37 @@ def async_retry(
 
             for attempt in range(config.max_retries + 1):
                 try:
-                    # Try to execute function
+                    # 尝试执行函数
                     return await func(*args, **kwargs)
 
                 except config.retryable_exceptions as e:
                     last_exception = e
 
-                    # If this is the last attempt, don't retry
+                    # 如果是最后一次尝试，不再重试
                     if attempt >= config.max_retries:
-                        logger.error(f"Function {func.__name__} retry failed, reached maximum retry count {config.max_retries}")
+                        logger.error(f"函数 {func.__name__} 重试失败，已达到最大重试次数 {config.max_retries}")
                         raise RetryExhaustedError(e, attempt + 1)
 
-                    # Calculate delay time
+                    # 计算延迟时间
                     delay = config.calculate_delay(attempt)
 
-                    # Log
+                    # 记录日志
                     logger.warning(
-                        f"Function {func.__name__} call {attempt + 1} failed: {str(e)}, "
-                        f"retrying attempt {attempt + 2} after {delay:.2f} seconds"
+                        f"函数 {func.__name__} 第 {attempt + 1} 次调用失败: {str(e)}, "
+                        f"将在 {delay:.2f} 秒后进行第 {attempt + 2} 次重试"
                     )
 
-                    # Call callback function
+                    # 调用回调函数
                     if on_retry:
                         on_retry(e, attempt + 1)
 
-                    # Wait before retry
+                    # 重试前等待
                     await asyncio.sleep(delay)
 
-            # Should not reach here in theory
+            # 理论上不应该到达这里
             if last_exception:
                 raise last_exception
-            raise Exception("Unknown error")
+            raise Exception("未知错误")
 
         return wrapper
 

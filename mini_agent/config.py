@@ -1,6 +1,6 @@
-"""Configuration management module
+"""配置管理模块
 
-Provides unified configuration loading and management functionality
+提供统一的配置加载和管理功能
 """
 
 from pathlib import Path
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class RetryConfig(BaseModel):
-    """Retry configuration"""
+    """重试配置"""
 
     enabled: bool = True
     max_retries: int = 3
@@ -20,17 +20,17 @@ class RetryConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    """LLM configuration"""
+    """LLM 配置"""
 
     api_key: str
     api_base: str = "https://api.minimax.io"
     model: str = "MiniMax-M2.5"
-    provider: str = "anthropic"  # "anthropic" or "openai"
+    provider: str = "anthropic"  # "anthropic" 或 "openai"
     retry: RetryConfig = Field(default_factory=RetryConfig)
 
 
 class AgentConfig(BaseModel):
-    """Agent configuration"""
+    """Agent 配置"""
 
     max_steps: int = 50
     workspace_dir: str = "./workspace"
@@ -38,33 +38,33 @@ class AgentConfig(BaseModel):
 
 
 class MCPConfig(BaseModel):
-    """MCP (Model Context Protocol) timeout configuration"""
+    """MCP（模型上下文协议）超时配置"""
 
-    connect_timeout: float = 10.0  # Connection timeout (seconds)
-    execute_timeout: float = 60.0  # Tool execution timeout (seconds)
-    sse_read_timeout: float = 120.0  # SSE read timeout (seconds)
+    connect_timeout: float = 10.0  # 连接超时（秒）
+    execute_timeout: float = 60.0  # 工具执行超时（秒）
+    sse_read_timeout: float = 120.0  # SSE 读取超时（秒）
 
 
 class ToolsConfig(BaseModel):
-    """Tools configuration"""
+    """工具配置"""
 
-    # Basic tools (file operations, bash)
+    # 基础工具（文件操作、bash）
     enable_file_tools: bool = True
     enable_bash: bool = True
     enable_note: bool = True
 
-    # Skills
+    # 技能
     enable_skills: bool = True
     skills_dir: str = "./skills"
 
-    # MCP tools
+    # MCP 工具
     enable_mcp: bool = True
     mcp_config_path: str = "mcp.json"
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
 
 class Config(BaseModel):
-    """Main configuration class"""
+    """主配置类"""
 
     llm: LLMConfig
     agent: AgentConfig
@@ -72,45 +72,45 @@ class Config(BaseModel):
 
     @classmethod
     def load(cls) -> "Config":
-        """Load configuration from the default search path."""
+        """从默认搜索路径加载配置。"""
         config_path = cls.get_default_config_path()
         if not config_path.exists():
-            raise FileNotFoundError("Configuration file not found. Run scripts/setup-config.sh or place config.yaml in mini_agent/config/.")
+            raise FileNotFoundError("配置文件未找到。请运行 scripts/setup-config.sh 或将 config.yaml 放置在 mini_agent/config/ 目录下。")
         return cls.from_yaml(config_path)
 
     @classmethod
     def from_yaml(cls, config_path: str | Path) -> "Config":
-        """Load configuration from YAML file
+        """从 YAML 文件加载配置
 
         Args:
-            config_path: Configuration file path
+            config_path: 配置文件路径
 
         Returns:
-            Config instance
+            Config 实例
 
         Raises:
-            FileNotFoundError: Configuration file does not exist
-            ValueError: Invalid configuration format or missing required fields
+            FileNotFoundError: 配置文件不存在
+            ValueError: 配置格式无效或缺少必填字段
         """
         config_path = Path(config_path)
 
         if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file does not exist: {config_path}")
+            raise FileNotFoundError(f"配置文件不存在: {config_path}")
 
         with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not data:
-            raise ValueError("Configuration file is empty")
+            raise ValueError("配置文件为空")
 
-        # Parse LLM configuration
+        # 解析 LLM 配置
         if "api_key" not in data:
-            raise ValueError("Configuration file missing required field: api_key")
+            raise ValueError("配置文件缺少必填字段: api_key")
 
         if not data["api_key"] or data["api_key"] == "YOUR_API_KEY_HERE":
-            raise ValueError("Please configure a valid API Key")
+            raise ValueError("请配置有效的 API Key")
 
-        # Parse retry configuration
+        # 解析重试配置
         retry_data = data.get("retry", {})
         retry_config = RetryConfig(
             enabled=retry_data.get("enabled", True),
@@ -128,17 +128,17 @@ class Config(BaseModel):
             retry=retry_config,
         )
 
-        # Parse Agent configuration
+        # 解析 Agent 配置
         agent_config = AgentConfig(
             max_steps=data.get("max_steps", 50),
             workspace_dir=data.get("workspace_dir", "./workspace"),
             system_prompt_path=data.get("system_prompt_path", "system_prompt.md"),
         )
 
-        # Parse tools configuration
+        # 解析工具配置
         tools_data = data.get("tools", {})
 
-        # Parse MCP configuration
+        # 解析 MCP 配置
         mcp_data = tools_data.get("mcp", {})
         mcp_config = MCPConfig(
             connect_timeout=mcp_data.get("connect_timeout", 10.0),
@@ -165,40 +165,40 @@ class Config(BaseModel):
 
     @staticmethod
     def get_package_dir() -> Path:
-        """Get the package installation directory
+        """获取包安装目录
 
         Returns:
-            Path to the mini_agent package directory
+            mini_agent 包目录路径
         """
-        # Get the directory where this config.py file is located
+        # 获取 config.py 文件所在的目录
         return Path(__file__).parent
 
     @classmethod
     def find_config_file(cls, filename: str) -> Path | None:
-        """Find configuration file with priority order
+        """按优先级顺序查找配置文件
 
-        Search for config file in the following order of priority:
-        1) mini_agent/config/{filename} in current directory (development mode)
-        2) ~/.mini-agent/config/{filename} in user home directory
-        3) {package}/mini_agent/config/{filename} in package installation directory
+        按以下优先级顺序搜索配置文件：
+        1) 当前目录的 mini_agent/config/{filename}（开发模式）
+        2) 用户主目录的 ~/.mini-agent/config/{filename}
+        3) 包安装目录的 {package}/mini_agent/config/{filename}
 
         Args:
-            filename: Configuration file name (e.g., "config.yaml", "mcp.json", "system_prompt.md")
+            filename: 配置文件名（例如 "config.yaml", "mcp.json", "system_prompt.md"）
 
         Returns:
-            Path to found config file, or None if not found
+            找到的配置文件的路径，如果未找到则返回 None
         """
-        # Priority 1: Development mode - current directory's config/ subdirectory
+        # 优先级 1：开发模式 - 当前目录的 config/ 子目录
         dev_config = Path.cwd() / "mini_agent" / "config" / filename
         if dev_config.exists():
             return dev_config
 
-        # Priority 2: User config directory
+        # 优先级 2：用户配置目录
         user_config = Path.home() / ".mini-agent" / "config" / filename
         if user_config.exists():
             return user_config
 
-        # Priority 3: Package installation directory's config/ subdirectory
+        # 优先级 3：包安装目录的 config/ 子目录
         package_config = cls.get_package_dir() / "config" / filename
         if package_config.exists():
             return package_config
@@ -207,14 +207,14 @@ class Config(BaseModel):
 
     @classmethod
     def get_default_config_path(cls) -> Path:
-        """Get the default config file path with priority search
+        """获取默认配置文件路径，按优先级搜索
 
         Returns:
-            Path to config.yaml (prioritizes: dev config/ > user config/ > package config/)
+            config.yaml 的路径（优先级：开发配置 > 用户配置 > 包配置）
         """
         config_path = cls.find_config_file("config.yaml")
         if config_path:
             return config_path
 
-        # Fallback to package config directory for error message purposes
+        # 回退到包配置目录，用于错误消息
         return cls.get_package_dir() / "config" / "config.yaml"
