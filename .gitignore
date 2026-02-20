@@ -57,5 +57,6 @@ mcp.json.bak
 docs/assets/backup/
 docs/assets/preview.html
 
+agent_data
 
 .agent_memory.json
